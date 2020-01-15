@@ -4,6 +4,7 @@ const routes = require("./routes");
 
 const app = express();
 
+mongoose.set('useCreateIndex', true);
 mongoose.connect(
   "mongodb+srv://omnistack:omnistack@cluster0-gbcth.mongodb.net/omnistack10?retryWrites=true&w=majority",
   {
