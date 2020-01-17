@@ -48,7 +48,7 @@ const Main = ({ navigation }) => {
     const response = await api.get("/search", {
       params: { latitude, longitude, techs }
     });
-    setDevs(response.data.devs);
+    setDevs(response.data);
   };
 
   const handleRegionChanged = region => {
