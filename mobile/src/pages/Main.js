@@ -20,6 +20,9 @@ const Main = ({ navigation }) => {
   const [currentRegion, setCurrentRegion] = useState(null);
   const [devs, setDevs] = useState([]);
   const [techs, setTechs] = useState('');
+  const [keyboardDidShowListener, setKeyboardDidShowListener] = useState(null);
+  const [keyboardDidHideListener, setKeyboardDidHideListener] = useState(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     const loadInitialPosition = async () => {
@@ -41,7 +44,31 @@ const Main = ({ navigation }) => {
     };
 
     loadInitialPosition();
+
+    setKeyboardDidShowListener(Keyboard.addListener('keyboardDidShow', keyboardDidShow));
+    setKeyboardDidHideListener(Keyboard.addListener('keyboardDidHide', keyboardDidHide));
+
+    const removeKeyboardListener = () => {
+      if (keyboardDidShowListener) {
+        keyboardDidShowListener.remove();
+      }
+
+      if (keyboardDidHideListener) {
+        keyboardDidHideListener.remove();
+      }
+    }
+
+    return removeKeyboardListener();
   }, []);
+
+  const keyboardDidShow = e => {
+    const {endCoordinates: {height}} = e;
+    setKeyboardHeight(height);
+  }
+
+  const keyboardDidHide = () => {
+    setKeyboardHeight(0);
+  }
 
   const loadDevs = async () => {
     const { latitude, longitude } = currentRegion;
@@ -97,7 +124,7 @@ const Main = ({ navigation }) => {
           </Marker>
         ))}
       </MapView>
-      <View style={styles.searchForm}>
+      <View style={[styles.searchForm, {bottom: 20 + keyboardHeight}]}>
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar devs por techs..."
@@ -142,7 +169,6 @@ const styles = StyleSheet.create({
   },
   searchForm: {
     position: "absolute",
-    top: 20,
     left: 20,
     right: 20,
     zIndex: 5,
