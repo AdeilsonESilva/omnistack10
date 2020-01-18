@@ -15,11 +15,12 @@ import {
 } from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
 import api from "../services/api";
+import { connect, disconnect, subscribeToNewDevs } from "../services/socket";
 
 const Main = ({ navigation }) => {
   const [currentRegion, setCurrentRegion] = useState(null);
   const [devs, setDevs] = useState([]);
-  const [techs, setTechs] = useState('');
+  const [techs, setTechs] = useState("");
   const [keyboardDidShowListener, setKeyboardDidShowListener] = useState(null);
   const [keyboardDidHideListener, setKeyboardDidHideListener] = useState(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -45,8 +46,12 @@ const Main = ({ navigation }) => {
 
     loadInitialPosition();
 
-    setKeyboardDidShowListener(Keyboard.addListener('keyboardDidShow', keyboardDidShow));
-    setKeyboardDidHideListener(Keyboard.addListener('keyboardDidHide', keyboardDidHide));
+    setKeyboardDidShowListener(
+      Keyboard.addListener("keyboardDidShow", keyboardDidShow)
+    );
+    setKeyboardDidHideListener(
+      Keyboard.addListener("keyboardDidHide", keyboardDidHide)
+    );
 
     const removeKeyboardListener = () => {
       if (keyboardDidShowListener) {
@@ -56,26 +61,48 @@ const Main = ({ navigation }) => {
       if (keyboardDidHideListener) {
         keyboardDidHideListener.remove();
       }
-    }
+    };
 
     return removeKeyboardListener();
   }, []);
 
+  useEffect(() => {
+    subscribeToNewDevs(dev => setDevs([...devs, dev]));
+  }, [devs]);
+
   const keyboardDidShow = e => {
-    const {endCoordinates: {height}} = e;
+    const {
+      endCoordinates: { height }
+    } = e;
+
     setKeyboardHeight(height);
-  }
+  };
 
   const keyboardDidHide = () => {
     setKeyboardHeight(0);
+  };
+
+  const setupWebsocket = () => {
+    disconnect();
+
+    const { latitude, longitude } = currentRegion;
+
+    connect(
+      latitude,
+      longitude,
+      techs
+    );
   }
 
   const loadDevs = async () => {
     const { latitude, longitude } = currentRegion;
+
     const response = await api.get("/search", {
       params: { latitude, longitude, techs }
     });
+
     setDevs(response.data);
+    setupWebsocket();
   };
 
   const handleRegionChanged = region => {
@@ -124,7 +151,7 @@ const Main = ({ navigation }) => {
           </Marker>
         ))}
       </MapView>
-      <View style={[styles.searchForm, {bottom: 20 + keyboardHeight}]}>
+      <View style={[styles.searchForm, { bottom: 20 + keyboardHeight }]}>
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar devs por techs..."
